@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>漢字れんしゅう</title>
+<style>
+:root {
+  --blue: #4a90d9;
+  --blue-dark: #3a7bc8;
+  --green: #66bb6a;
+  --green-dark: #4caf50;
+  --orange: #ff9800;
+  --pink: #e91e63;
+  --bg: #f0f4ff;
+  --card: #ffffff;
+  --text: #333;
+  --text-light: #888;
+  --radius: 16px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); min-height: 100dvh; }
+#app { max-width: 900px; margin: 0 auto; padding: 16px; padding-bottom: 40px; }
+
+/* --- ヘッダー --- */
+.header { text-align: center; padding: 16px 0 8px; }
+.header h1 { font-size: 26px; color: var(--text); }
+.header .sub { font-size: 14px; color: var(--text-light); margin-top: 4px; }
+.back-btn { position: absolute; left: 16px; top: 18px; font-size: 28px; background: none; border: none; color: var(--blue); cursor: pointer; padding: 8px; }
+
+/* --- 共通ボタン --- */
+.btn { display: block; width: 100%; max-width: 500px; margin: 12px auto; padding: 18px 24px; font-size: 20px; font-weight: bold; color: #fff; border: none; border-radius: var(--radius); cursor: pointer; text-align: center; }
+.btn-blue { background: var(--blue); }
+.btn-blue:active { background: var(--blue-dark); }
+.btn-green { background: var(--green); }
+.btn-green:active { background: var(--green-dark); }
+.btn-orange { background: var(--orange); }
+.btn:disabled { background: #ccc; cursor: default; }
+
+/* --- ユーザー選択 --- */
+.user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin: 20px 0; }
+.user-card { background: var(--card); border-radius: var(--radius); padding: 20px 12px; text-align: center; box-shadow: var(--shadow); cursor: pointer; font-size: 20px; font-weight: bold; color: var(--blue); border: 3px solid transparent; transition: 0.15s; }
+.user-card:active { border-color: var(--blue); transform: scale(0.97); }
+.user-card .avatar { font-size: 40px; margin-bottom: 8px; }
+.new-user-input { display: flex; gap: 8px; max-width: 500px; margin: 16px auto; }
+.new-user-input input { flex: 1; padding: 14px 16px; font-size: 18px; border: 2px solid #ddd; border-radius: 12px; outline: none; }
+.new-user-input input:focus { border-color: var(--blue); }
+.new-user-input button { padding: 14px 24px; font-size: 18px; font-weight: bold; background: var(--green); color: #fff; border: none; border-radius: 12px; cursor: pointer; white-space: nowrap; }
+
+/* --- 学年選択 --- */
+.grade-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
+.grade-card { background: var(--card); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow); cursor: pointer; border: 3px solid transparent; transition: 0.15s; }
+.grade-card:active { border-color: var(--blue); transform: scale(0.97); }
+.grade-card.disabled { opacity: 0.4; cursor: default; }
+.grade-card .grade-num { font-size: 32px; font-weight: bold; color: var(--blue); }
+.grade-card .grade-info { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+.grade-card .progress-bar { height: 6px; background: #e8e8e8; border-radius: 3px; margin-top: 8px; overflow: hidden; }
+.grade-card .progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.3s; }
+
+/* --- 出題画面 --- */
+.question-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+.q-item { display: flex; align-items: center; padding: 14px 20px; border-bottom: 1px solid #f0f0f0; }
+.q-item:last-child { border-bottom: none; }
+.q-num { color: var(--text-light); width: 36px; font-size: 16px; flex-shrink: 0; }
+.q-reading { font-size: 22px; font-weight: bold; color: var(--blue); flex: 1; }
+.q-hint { font-size: 13px; color: #aaa; flex-shrink: 0; }
+
+/* --- 答え合わせ画面 --- */
+.answer-info { text-align: center; color: var(--text-light); margin-bottom: 12px; font-size: 15px; }
+.answer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 20px; }
+.a-card { background: var(--card); border-radius: var(--radius); padding: 12px; text-align: center; box-shadow: var(--shadow); border: 3px solid transparent; transition: 0.2s; }
+.a-card.all-good { border-color: #c8e6c9; background: #f1f8e9; }
+.a-card.has-improve { border-color: #ffe0b2; background: #fff8e1; }
+.a-card img { width: 110px; height: 110px; border-radius: 8px; }
+.a-card .card-reading { font-size: 14px; color: var(--text-light); margin: 4px 0 2px; }
+.a-card .card-kanji { font-size: 26px; font-weight: bold; }
+.a-card .eval-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; }
+.a-card .eval-label { flex: 1; text-align: right; color: var(--text-light); }
+.eval-btn { width: 40px; height: 36px; border-radius: 8px; border: 2px solid #ddd; background: #fff; font-size: 16px; cursor: pointer; transition: 0.15s; }
+.eval-btn:active { transform: scale(0.93); }
+.eval-btn.good { border-color: var(--green-dark); background: #c8e6c9; }
+.eval-btn.improve { border-color: var(--orange); background: #ffe0b2; }
+
+/* --- 結果画面 --- */
+.result-box { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; text-align: center; margin-bottom: 16px; }
+.result-medal { font-size: 56px; }
+.result-score { font-size: 20px; color: var(--text); margin: 8px 0; }
+.result-score b { font-size: 40px; color: var(--blue); }
+.result-msg { font-size: 16px; color: var(--text-light); }
+.levelup-list { background: #e8f5e9; border-radius: 12px; padding: 14px; margin: 12px 0; }
+.levelup-list .title { font-size: 14px; color: var(--green-dark); font-weight: bold; margin-bottom: 6px; }
+.levelup-item { font-size: 18px; padding: 2px 0; }
+.review-list { background: #fff3e0; border-radius: 12px; padding: 14px; margin: 12px 0; }
+.review-list .title { font-size: 14px; color: #e65100; font-weight: bold; margin-bottom: 6px; }
+.result-detail { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+.rd-item { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid #f0f0f0; font-size: 18px; }
+.rd-item:last-child { border-bottom: none; }
+.rd-kanji { width: 50px; font-weight: bold; }
+.rd-evals { flex: 1; display: flex; gap: 8px; font-size: 14px; }
+.rd-eval { padding: 2px 8px; border-radius: 6px; }
+.rd-eval.g { background: #c8e6c9; color: #2e7d32; }
+.rd-eval.i { background: #ffe0b2; color: #e65100; }
+.notice { background: #fff3e0; color: #e65100; border-radius: 12px; padding: 12px 16px; text-align: center; font-size: 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ============================================================
+// Firebase 設定 — ここに自分のプロジェクトの値を入れてください
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "YOUR_APP_ID"
+};
+
+// ============================================================
+// 漢字データ [kanji, reading, hint]
+// ============================================================
+const KANJI_DATA = {
+  1: [
+    ['一','いち','かずの１'],['二','に','かずの２'],['三','さん','かずの３'],
+    ['四','よん','かずの４'],['五','ご','かずの５'],['六','ろく','かずの６'],
+    ['七','なな','かずの７'],['八','はち','かずの８'],['九','きゅう','かずの９'],
+    ['十','じゅう','かずの１０'],['百','ひゃく','かずの１００'],['千','せん','かずの１０００'],
+    ['上','うえ','したの反対'],['下','した','うえの反対'],['左','ひだり','みぎの反対'],
+    ['右','みぎ','ひだりの反対'],['大','おおきい','ちいさいの反対'],['小','ちいさい','おおきいの反対'],
+    ['中','なか','まんなか'],['入','いる','なかに〇〇'],['出','でる','そとに〇〇'],
+    ['日','ひ','おひさま'],['月','つき','よぞらにひかる'],['火','ひ','もえる'],
+    ['水','みず','のむもの'],['木','き','もりにある'],['金','かね','おかね'],
+    ['土','つち','じめんの〇〇'],['山','やま','たかいところ'],['川','かわ','みずがながれる'],
+    ['田','た','おこめをつくる'],['天','てん','そら'],['気','き','てん〇〇'],
+    ['雨','あめ','そらからふる'],['花','はな','きれいにさく'],['草','くさ','みどりの〇〇'],
+    ['竹','たけ','パンダがたべる'],['林','はやし','きがたくさん'],['森','もり','きがもっとたくさん'],
+    ['石','いし','かたいもの'],['空','そら','あおい〇〇'],['夕','ゆう','〇〇がた'],
+    ['赤','あか','いろのひとつ'],['青','あお','そらのいろ'],['白','しろ','ゆきのいろ'],
+    ['犬','いぬ','ワンワン'],['虫','むし','ちいさないきもの'],['貝','かい','うみにいる'],
+    ['人','ひと','にんげん'],['男','おとこ','おんなの反対'],['女','おんな','おとこの反対'],
+    ['子','こ','こども'],['王','おう','おうさま'],['玉','たま','まるいもの'],
+    ['円','えん','おかねのたんい'],['年','とし','１〇〇は365にち'],['早','はやい','おそいの反対'],
+    ['先','さき','〇〇せい'],['生','いきる','せい〇〇'],['正','ただしい','しょう〇〇'],
+    ['足','あし','あるくときつかう'],['手','て','ものをもつ'],['目','め','みるところ'],
+    ['耳','みみ','きくところ'],['口','くち','たべるところ'],['音','おと','きこえる'],
+    ['力','ちから','つよさ'],['立','たつ','おきあがる'],['名','な','〇〇まえ'],
+    ['字','じ','もじ'],['文','ぶん','〇〇しょう'],['本','ほん','よむもの'],
+    ['学','がく','〇〇こう'],['校','こう','がっ〇〇'],['見','みる','めでみる'],
+    ['休','やすむ','おやすみ'],['糸','いと','ぬうときつかう'],['車','くるま','のりもの'],
+    ['町','まち','ひとがすむところ'],['村','むら','ちいさなまち'],
+  ],
+  2: [
+    ['春','はる','あたたかいきせつ'],['夏','なつ','あついきせつ'],['秋','あき','もみじのきせつ'],['冬','ふゆ','さむいきせつ'],
+    ['朝','あさ','いちにちのはじまり'],['昼','ひる','おひるごはん'],['夜','よる','くらいとき'],
+    ['晴','はれ','おてんき'],['雲','くも','そらにうかぶ'],['雪','ゆき','しろくてつめたい'],['風','かぜ','ビューッとふく'],
+    ['星','ほし','よぞらにひかる'],['光','ひかり','ピカピカ'],
+    ['色','いろ','あか・あおなど'],['黒','くろ','いろのひとつ'],['黄','き','バナナの〇〇'],
+    ['新','あたらしい','ふるいの反対'],['古','ふるい','あたらしいの反対'],
+    ['遠','とおい','ちかいの反対'],['近','ちかい','とおいの反対'],
+    ['高','たかい','ひくいの反対'],['広','ひろい','せまいの反対'],
+    ['長','ながい','みじかいの反対'],['太','ふとい','ほそいの反対'],['細','ほそい','ふといの反対'],
+    ['強','つよい','よわいの反対'],['弱','よわい','つよいの反対'],
+    ['多','おおい','すくないの反対'],['少','すくない','おおいの反対'],
+    ['明','あかるい','くらいの反対'],['同','おなじ','ちがうの反対'],
+    ['前','まえ','うしろの反対'],['後','うしろ','まえの反対'],
+    ['内','うち','なか'],['外','そと','うちの反対'],
+    ['東','ひがし','ほうがく'],['西','にし','ほうがく'],['南','みなみ','ほうがく'],['北','きた','ほうがく'],
+    ['考','かんがえる','あたまをつかう'],['思','おもう','きもちで〇〇'],
+    ['知','しる','わかる'],['教','おしえる','せんせいがする'],
+    ['読','よむ','ほんを〇〇'],['書','かく','えんぴつで〇〇'],['話','はなす','おしゃべりする'],
+    ['言','いう','ことば'],['聞','きく','みみをつかう'],['答','こたえ','もんだいの〇〇'],
+    ['記','き','にっ〇〇'],['語','ご','にほん〇〇'],
+    ['食','たべる','ごはんを〇〇'],['歩','あるく','あしをつかう'],['走','はしる','はやくうごく'],
+    ['止','とまる','うごかない'],['引','ひく','ひっぱる'],['切','きる','はさみで〇〇'],
+    ['通','とおる','みちを〇〇'],['帰','かえる','おうちに〇〇'],
+    ['行','いく','でかける'],['来','くる','いくの反対'],['会','あう','ひとに〇〇'],
+    ['売','うる','おみせで〇〇'],['買','かう','おかねをだす'],
+    ['馬','うま','どうぶつ'],['牛','うし','モーとなく'],['鳥','とり','そらをとぶ'],['魚','さかな','うみにいる'],
+    ['親','おや','おとうさんおかあさん'],['父','ちち','おとうさん'],['母','はは','おかあさん'],
+    ['兄','あに','おとこのきょうだい（うえ）'],['姉','あね','おんなのきょうだい（うえ）'],
+    ['弟','おとうと','おとこのきょうだい（した）'],['妹','いもうと','おんなのきょうだい（した）'],
+    ['友','とも','ともだち'],
+    ['家','いえ','すんでいるところ'],['門','もん','いりぐち'],['戸','と','あけしめする'],
+    ['室','しつ','へや'],['店','みせ','おかいもの'],
+    ['寺','てら','おぼうさんがいる'],['社','しゃ','じん〇〇'],['園','その','こうえん'],
+    ['国','くに','にほんは〇〇'],['京','きょう','とう〇〇'],['市','し','とうきょう〇〇'],
+    ['地','ち','〇〇めん'],['池','いけ','みずがたまっている'],
+    ['海','うみ','おおきなみず'],['谷','たに','やまとやまのあいだ'],['岩','いわ','おおきないし'],
+    ['野','の','〇〇はら'],['原','はら','ひろい〇〇'],['里','さと','ふるさと'],
+    ['道','みち','あるくところ'],['船','ふね','うみにうかぶ'],
+    ['線','せん','まっすぐな〇〇'],['角','かど','まがり〇〇'],['形','かたち','もののすがた'],
+    ['丸','まる','まるいかたち'],['点','てん','ちいさな〇'],['直','なおす','まっすぐにする'],
+    ['心','こころ','きもち'],['声','こえ','おおきな〇〇'],['顔','かお','めやはながある'],
+    ['首','くび','あたまのした'],['頭','あたま','からだのいちばんうえ'],['体','からだ','あたまやてあし'],
+    ['毛','け','かみの〇〇'],['羽','はね','とりの〇〇'],
+    ['米','こめ','ごはんのもと'],['麦','むぎ','パンのもと'],['肉','にく','おにく'],['茶','ちゃ','おちゃ'],
+    ['矢','や','ゆみでいる'],['刀','かたな','さむらいがもつ'],['弓','ゆみ','やをいるどうぐ'],
+    ['絵','え','おえかき'],['紙','かみ','ノートの〇〇'],['歌','うた','うたう'],['楽','たのしい','うれしいきもち'],
+    ['図','ず','〇〇かん'],['画','が','え〇〇'],
+    ['番','ばん','じゅんばん'],['組','くみ','1ねん1〇〇'],['科','か','り〇〇'],
+    ['算','さん','さんすう'],['数','かず','1,2,3…'],['計','けい','とけい'],
+    ['回','かい','1〇〇 2〇〇'],['半','はん','はんぶん'],['万','まん','いち〇〇'],
+    ['自','じ','〇〇ぶん'],['活','かつ','せい〇〇'],
+    ['時','とき','じかん'],['週','しゅう','1〇〇かん'],['曜','よう','〇〇び'],
+    ['毎','まい','〇〇にち'],['何','なに','〇〇ですか？'],
+    ['方','かた','やり〇〇'],['用','よう','つかう'],
+    ['電','でん','〇〇き'],['汽','き','〇〇しゃ'],['台','だい','ものをのせる'],
+    ['交','まじわる','こう〇〇'],['公','こう','〇〇えん'],['工','こう','〇〇じょう'],
+    ['作','つくる','ものをつくる'],['合','あう','ぴったり'],
+    ['当','あたる','まとに〇〇'],['場','ば','〇〇しょ'],
+    ['今','いま','このとき'],['元','もと','げんき'],
+    ['理','り','〇〇か'],['才','さい','ねんれい'],
+    ['鳴','なく','どうぶつが〇〇'],['午','ご','〇〇ぜん・〇〇ご'],
+    ['夕','ゆう','〇〇がた'],
+  ],
+};
+
+// グレード情報
+const GRADE_INFO = {
+  1: { label: '1年生', total: 80 },
+  2: { label: '2年生', total: 160 },
+  3: { label: '3年生', total: 200, soon: true },
+  4: { label: '4年生', total: 202, soon: true },
+  5: { label: '5年生', total: 193, soon: true },
+  6: { label: '6年生', total: 191, soon: true },
+};
+
+// ============================================================
+// ストレージ抽象化（Firebase or localStorage）
+// ============================================================
+let db = null;
+let useFirebase = false;
+
+function initStorage() {
+  const hasConfig = FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('YOUR_');
+  if (hasConfig) {
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      useFirebase = true;
+    } catch(e) {
+      console.warn('Firebase init failed, using localStorage', e);
+    }
+  }
+}
+
+function lsKey(path) { return 'kanji_' + path.replace(/\//g, '_'); }
+
+async function loadDoc(path) {
+  if (useFirebase) {
+    const snap = await db.doc(path).get();
+    return snap.exists ? snap.data() : null;
+  }
+  const d = localStorage.getItem(lsKey(path));
+  return d ? JSON.parse(d) : null;
+}
+
+async function saveDoc(path, data) {
+  if (useFirebase) {
+    await db.doc(path).set(data, { merge: true });
+  } else {
+    localStorage.setItem(lsKey(path), JSON.stringify(data));
+  }
+}
+
+async function loadUsers() {
+  if (useFirebase) {
+    const snap = await db.collection('users').get();
+    return snap.docs.map(d => d.id);
+  }
+  const d = localStorage.getItem('kanji_userlist');
+  return d ? JSON.parse(d) : [];
+}
+
+async function addUserToList(name) {
+  if (useFirebase) {
+    await db.doc(`users/${name}`).set({ created: new Date().toISOString() }, { merge: true });
+  } else {
+    const list = await loadUsers();
+    if (!list.includes(name)) {
+      list.push(name);
+      localStorage.setItem('kanji_userlist', JSON.stringify(list));
+    }
+  }
+}
+
+// ============================================================
+// アプリ本体
+// ============================================================
+const app = document.getElementById('app');
+let state = { user: null, grade: null, gradeData: null, questions: [], evals: {} };
+
+const AVATARS = ['🐶','🐱','🐰','🐼','🦊','🐸','🐵','🦁','🐯','🐮','🐷','🐨'];
+function getAvatar(name) {
+  let h = 0;
+  for (const c of name) h = ((h << 5) - h + c.charCodeAt(0)) | 0;
+  return AVATARS[Math.abs(h) % AVATARS.length];
+}
+
+function getGifUrl(kanji) {
+  return `https://kakijun.com/kanjiphoto/gif/kanji-kakijun-animation-${kanji.codePointAt(0).toString(16)}.gif`;
+}
+
+function render(html) { app.innerHTML = html; }
+
+// --- ユーザー選択画面 ---
+async function showUserSelect() {
+  state = { user: null, grade: null, gradeData: null, questions: [], evals: {} };
+  const users = await loadUsers();
+  render(`
+    <div class="header"><h1>漢字れんしゅう</h1>
+    <div class="sub">${useFirebase ? '' : '📱 ローカルモード（このブラウザにデータ保存）'}</div></div>
+    <div class="user-grid">
+      ${users.map(u => `<div class="user-card" onclick="selectUser('${u}')">
+        <div class="avatar">${getAvatar(u)}</div>${u}</div>`).join('')}
+      <div class="user-card" onclick="showNewUser()" style="color:#aaa;border:2px dashed #ddd;">
+        <div class="avatar">➕</div>あたらしく作る</div>
+    </div>
+    <div id="new-user-area"></div>
+  `);
+}
+
+window.selectUser = async function(name) {
+  state.user = name;
+  showGradeSelect();
+};
+
+window.showNewUser = function() {
+  document.getElementById('new-user-area').innerHTML = `
+    <div class="new-user-input">
+      <input id="newname" placeholder="なまえを入れてね" maxlength="10">
+      <button onclick="createUser()">けってい</button>
+    </div>`;
+  document.getElementById('newname').focus();
+};
+
+window.createUser = async function() {
+  const name = document.getElementById('newname').value.trim();
+  if (!name) return;
+  await addUserToList(name);
+  state.user = name;
+  showGradeSelect();
+};
+
+// --- 学年選択画面 ---
+async function showGradeSelect() {
+  let cards = '';
+  for (const [g, info] of Object.entries(GRADE_INFO)) {
+    const data = await loadDoc(`users/${state.user}/grades/${g}`);
+    const used = data?.usedKanji?.length || 0;
+    const total = KANJI_DATA[g]?.length || info.total;
+    const pct = total > 0 ? Math.round((used / total) * 100) : 0;
+    const disabled = info.soon ? 'disabled' : '';
+    cards += `<div class="grade-card ${disabled}" ${disabled ? '' : `onclick="selectGrade(${g})"`}>
+      <div class="grade-num">${info.label}</div>
+      <div class="grade-info">${info.soon ? 'じゅんびちゅう' : `${used} / ${total} もじ（${pct}%）`}</div>
+      ${!info.soon ? `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>` : ''}
+    </div>`;
+  }
+  render(`
+    <div style="position:relative">
+      <button class="back-btn" onclick="showUserSelect()">←</button>
+      <div class="header"><h1>${getAvatar(state.user)} ${state.user}</h1>
+      <div class="sub">なんねんせいの漢字をれんしゅうする？</div></div>
+    </div>
+    <div class="grade-grid">${cards}</div>
+  `);
+}
+
+window.selectGrade = async function(g) {
+  state.grade = g;
+  state.gradeData = await loadDoc(`users/${state.user}/grades/${g}`) || {
+    usedKanji: [], currentRound: 0, kanjiStats: {}, history: []
+  };
+  pickAndShowQuiz();
+};
+
+// --- 出題ロジック ---
+function pickQuestions() {
+  const pool = KANJI_DATA[state.grade];
+  if (!pool) return [];
+  const used = new Set(state.gradeData.usedKanji || []);
+  const stats = state.gradeData.kanjiStats || {};
+
+  // 復習候補: improveが多い順
+  const reviewCandidates = Object.entries(stats)
+    .map(([k, s]) => {
+      const imp = (s.shape?.improve||0) + (s.order?.improve||0) + (s.balance?.improve||0);
+      return { kanji: k, improveTotal: imp };
+    })
+    .filter(x => x.improveTotal > 0)
+    .sort((a, b) => b.improveTotal - a.improveTotal);
+
+  const selected = [];
+  const selectedSet = new Set();
+
+  // 復習から最大3問
+  for (const rc of reviewCandidates) {
+    if (selected.length >= 3) break;
+    const entry = pool.find(p => p[0] === rc.kanji);
+    if (entry && !selectedSet.has(rc.kanji)) {
+      selected.push({ kanji: entry[0], reading: entry[1], hint: entry[2], isReview: true });
+      selectedSet.add(rc.kanji);
+    }
+  }
+
+  // 新規から残り
+  const unused = pool.filter(p => !used.has(p[0]) && !selectedSet.has(p[0]));
+  // シャッフル
+  for (let i = unused.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [unused[i], unused[j]] = [unused[j], unused[i]];
+  }
+  for (const u of unused) {
+    if (selected.length >= 10) break;
+    selected.push({ kanji: u[0], reading: u[1], hint: u[2], isReview: false });
+    selectedSet.add(u[0]);
+  }
+
+  // まだ10問に満たない場合（全漢字使用済み）：ランダムに追加
+  if (selected.length < 10) {
+    const remaining = pool.filter(p => !selectedSet.has(p[0]));
+    for (let i = remaining.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+    }
+    for (const r of remaining) {
+      if (selected.length >= 10) break;
+      selected.push({ kanji: r[0], reading: r[1], hint: r[2], isReview: true });
+    }
+  }
+
+  return selected;
+}
+
+function pickAndShowQuiz() {
+  state.questions = pickQuestions();
+  state.evals = {};
+  if (state.questions.length === 0) {
+    render(`<div class="header"><h1>この学年のもんだいはまだありません</h1></div>
+      <button class="btn btn-blue" onclick="showGradeSelect()">もどる</button>`);
+    return;
+  }
+  state.gradeData.currentRound = (state.gradeData.currentRound || 0) + 1;
+  showQuiz();
+}
+
+// --- 出題画面 ---
+function showQuiz() {
+  const round = state.gradeData.currentRound;
+  render(`
+    <div style="position:relative">
+      <button class="back-btn" onclick="showGradeSelect()">←</button>
+      <div class="header"><h1>第${round}回</h1>
+      <div class="sub">${GRADE_INFO[state.grade].label}　${getAvatar(state.user)} ${state.user}</div></div>
+    </div>
+    <div class="question-card">
+      ${state.questions.map((q, i) => `
+        <div class="q-item">
+          <span class="q-num">${i + 1}.</span>
+          <span class="q-reading">${q.reading}</span>
+          <span class="q-hint">${q.hint}${q.isReview ? ' 🔄' : ''}</span>
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-blue" onclick="showAnswerReview()">書けた！答え合わせする</button>
+  `);
+}
+
+// --- 答え合わせ画面 ---
+function showAnswerReview() {
+  // 全項目デフォルト◎
+  state.questions.forEach((q, i) => {
+    state.evals[i] = { shape: 'good', order: 'good', balance: 'good' };
+  });
+
+  const cards = state.questions.map((q, i) => `
+    <div class="a-card all-good" id="ac-${i}">
+      <img src="${getGifUrl(q.kanji)}" alt="${q.kanji}" loading="lazy">
+      <div class="card-reading">${q.reading}</div>
+      <div class="card-kanji">${q.kanji}</div>
+      <div class="eval-row">
+        <span class="eval-label">かたち</span>
+        <button class="eval-btn good" id="s-g-${i}" onclick="setEval(${i},'shape','good')">◎</button>
+        <button class="eval-btn" id="s-i-${i}" onclick="setEval(${i},'shape','improve')">△</button>
+      </div>
+      <div class="eval-row">
+        <span class="eval-label">かきじゅん</span>
+        <button class="eval-btn good" id="o-g-${i}" onclick="setEval(${i},'order','good')">◎</button>
+        <button class="eval-btn" id="o-i-${i}" onclick="setEval(${i},'order','improve')">△</button>
+      </div>
+      <div class="eval-row">
+        <span class="eval-label">バランス</span>
+        <button class="eval-btn good" id="b-g-${i}" onclick="setEval(${i},'balance','good')">◎</button>
+        <button class="eval-btn" id="b-i-${i}" onclick="setEval(${i},'balance','improve')">△</button>
+      </div>
+    </div>`).join('');
+
+  render(`
+    <div style="position:relative">
+      <button class="back-btn" onclick="showQuiz()">←</button>
+      <div class="header"><h1>答え合わせ</h1>
+      <div class="sub">GIFを見てかくにん！△のところをタップしてね</div></div>
+    </div>
+    <div class="answer-grid">${cards}</div>
+    <button class="btn btn-green" onclick="showResults()">けっかを見る</button>
+  `);
+}
+
+window.setEval = function(idx, aspect, value) {
+  state.evals[idx][aspect] = value;
+  // ボタン更新
+  const prefix = aspect === 'shape' ? 's' : aspect === 'order' ? 'o' : 'b';
+  const gBtn = document.getElementById(`${prefix}-g-${idx}`);
+  const iBtn = document.getElementById(`${prefix}-i-${idx}`);
+  gBtn.className = `eval-btn ${value === 'good' ? 'good' : ''}`;
+  iBtn.className = `eval-btn ${value === 'improve' ? 'improve' : ''}`;
+  // カード色更新
+  const card = document.getElementById(`ac-${idx}`);
+  const e = state.evals[idx];
+  const allGood = e.shape === 'good' && e.order === 'good' && e.balance === 'good';
+  card.className = `a-card ${allGood ? 'all-good' : 'has-improve'}`;
+};
+
+// --- 結果画面 ---
+async function showResults() {
+  const stats = state.gradeData.kanjiStats || {};
+  const prevStats = JSON.parse(JSON.stringify(stats)); // レベルアップ判定用
+  let goodCount = 0;
+  let totalAspects = state.questions.length * 3;
+  const levelUps = [];
+  const improveList = [];
+
+  // 評価を集計 & 保存データ更新
+  const roundQuestions = [];
+  state.questions.forEach((q, i) => {
+    const e = state.evals[i];
+    const aspects = ['shape', 'order', 'balance'];
+    const aspectLabels = { shape: 'かたち', order: 'かきじゅん', balance: 'バランス' };
+
+    if (!stats[q.kanji]) {
+      stats[q.kanji] = {
+        shape: { good: 0, improve: 0 },
+        order: { good: 0, improve: 0 },
+        balance: { good: 0, improve: 0 },
+        lastDate: ''
+      };
+    }
+    const ks = stats[q.kanji];
+    ks.lastDate = new Date().toISOString().slice(0, 10);
+
+    const qResult = { kanji: q.kanji, shape: e.shape, order: e.order, balance: e.balance };
+    roundQuestions.push(qResult);
+
+    aspects.forEach(a => {
+      if (e[a] === 'good') {
+        goodCount++;
+        ks[a].good++;
+        // レベルアップ判定
+        const prev = prevStats[q.kanji];
+        if (prev && prev[a]?.improve > 0 && e[a] === 'good') {
+          levelUps.push({ kanji: q.kanji, aspect: aspectLabels[a] });
+        }
+      } else {
+        ks[a].improve++;
+        improveList.push({ kanji: q.kanji, aspect: aspectLabels[a] });
+      }
+    });
+
+    // usedKanjiに追加
+    if (!state.gradeData.usedKanji.includes(q.kanji)) {
+      state.gradeData.usedKanji.push(q.kanji);
+    }
+  });
+
+  // 履歴追加
+  state.gradeData.history.push({
+    round: state.gradeData.currentRound,
+    date: new Date().toISOString().slice(0, 10),
+    questions: roundQuestions,
+    goodCount,
+    totalAspects
+  });
+  state.gradeData.kanjiStats = stats;
+
+  // 保存
+  await saveDoc(`users/${state.user}/grades/${state.grade}`, state.gradeData);
+
+  // メダル判定
+  const pct = goodCount / totalAspects;
+  let medal = '', medalMsg = '';
+  if (pct === 1) { medal = '🥇'; medalMsg = 'パーフェクト！！'; }
+  else if (pct >= 0.8) { medal = '🥈'; medalMsg = 'すごい！よくできました！'; }
+  else if (pct >= 0.5) { medal = '🥉'; medalMsg = 'がんばったね！'; }
+  else { medal = '⭐'; medalMsg = 'つぎもがんばろう！'; }
+
+  // レベルアップセクション
+  let levelUpHtml = '';
+  if (levelUps.length > 0) {
+    const items = levelUps.map(l => `<div class="levelup-item">🎉 ${l.kanji}（${l.aspect}）</div>`).join('');
+    levelUpHtml = `<div class="levelup-list"><div class="title">⬆️ レベルアップ！</div>${items}</div>`;
+  }
+
+  // 復習リスト
+  let reviewHtml = '';
+  if (improveList.length > 0) {
+    const grouped = {};
+    improveList.forEach(x => {
+      if (!grouped[x.kanji]) grouped[x.kanji] = [];
+      grouped[x.kanji].push(x.aspect);
+    });
+    const items = Object.entries(grouped).map(([k, aspects]) =>
+      `<div style="font-size:18px;padding:2px 0;">${k}（${aspects.join('・')}）</div>`
+    ).join('');
+    reviewHtml = `<div class="review-list"><div class="title">📝 つぎにがんばるところ</div>${items}</div>`;
+  }
+
+  // 詳細結果
+  const detailItems = state.questions.map((q, i) => {
+    const e = state.evals[i];
+    const evalBadge = (v, label) => `<span class="rd-eval ${v === 'good' ? 'g' : 'i'}">${v === 'good' ? '◎' : '△'}${label}</span>`;
+    return `<div class="rd-item">
+      <span class="rd-kanji">${q.kanji}</span>
+      <div class="rd-evals">
+        ${evalBadge(e.shape, 'かたち')}
+        ${evalBadge(e.order, 'じゅん')}
+        ${evalBadge(e.balance, 'バランス')}
+      </div>
+    </div>`;
+  }).join('');
+
+  const pool = KANJI_DATA[state.grade];
+  const remaining = pool ? pool.length - state.gradeData.usedKanji.length : 0;
+
+  render(`
+    <div class="header"><h1>けっか</h1>
+    <div class="sub">第${state.gradeData.currentRound}回　${GRADE_INFO[state.grade].label}</div></div>
+    <div class="result-box">
+      <div class="result-medal">${medal}</div>
+      <div class="result-score">◎ <b>${goodCount}</b> / ${totalAspects}</div>
+      <div class="result-msg">${medalMsg}</div>
+    </div>
+    ${levelUpHtml}
+    ${reviewHtml}
+    <div class="result-detail">${detailItems}</div>
+    ${remaining > 0 ?
+      `<button class="btn btn-blue" onclick="nextRound()">つぎの10もん（のこり${remaining}もじ）</button>` :
+      `<button class="btn btn-orange" onclick="nextRound()">ふくしゅうモード 🔄</button>`
+    }
+    <button class="btn btn-green" onclick="showGradeSelect()">おわる</button>
+  `);
+}
+
+window.nextRound = function() {
+  pickAndShowQuiz();
+};
+
+// ============================================================
+// 起動
+// ============================================================
+initStorage();
+showUserSelect();
+</script>
+</body>
+</html>
