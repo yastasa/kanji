@@ -117,12 +117,12 @@ body { font-family: 'Hiragino Sans','Meiryo',sans-serif; background: var(--bg); 
 // Firebase 設定 — ここに自分のプロジェクトの値を入れてください
 // ============================================================
 const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAYt_OQrRp8YITVhy3wf2OAnoVnEHc_8H0",
+  authDomain: "kanji-8d952.firebaseapp.com",
+  projectId: "kanji-8d952",
+  storageBucket: "kanji-8d952.firebasestorage.app",
+  messagingSenderId: "65709030030",
+  appId: "1:65709030030:web:ace1e66eb49226569427df"
 };
 
 // ============================================================
@@ -477,29 +477,29 @@ function showQuiz() {
 
 // --- 答え合わせ画面 ---
 function showAnswerReview() {
-  // 全項目デフォルト◎
+  // 全項目デフォルト未選択
   state.questions.forEach((q, i) => {
-    state.evals[i] = { shape: 'good', order: 'good', balance: 'good' };
+    state.evals[i] = { shape: null, order: null, balance: null };
   });
 
   const cards = state.questions.map((q, i) => `
-    <div class="a-card all-good" id="ac-${i}">
+    <div class="a-card" id="ac-${i}">
       <img src="${getGifUrl(q.kanji)}" alt="${q.kanji}" loading="lazy">
       <div class="card-reading">${q.reading}</div>
       <div class="card-kanji">${q.kanji}</div>
       <div class="eval-row">
         <span class="eval-label">かたち</span>
-        <button class="eval-btn good" id="s-g-${i}" onclick="setEval(${i},'shape','good')">◎</button>
+        <button class="eval-btn" id="s-g-${i}" onclick="setEval(${i},'shape','good')">◎</button>
         <button class="eval-btn" id="s-i-${i}" onclick="setEval(${i},'shape','improve')">△</button>
       </div>
       <div class="eval-row">
         <span class="eval-label">かきじゅん</span>
-        <button class="eval-btn good" id="o-g-${i}" onclick="setEval(${i},'order','good')">◎</button>
+        <button class="eval-btn" id="o-g-${i}" onclick="setEval(${i},'order','good')">◎</button>
         <button class="eval-btn" id="o-i-${i}" onclick="setEval(${i},'order','improve')">△</button>
       </div>
       <div class="eval-row">
         <span class="eval-label">バランス</span>
-        <button class="eval-btn good" id="b-g-${i}" onclick="setEval(${i},'balance','good')">◎</button>
+        <button class="eval-btn" id="b-g-${i}" onclick="setEval(${i},'balance','good')">◎</button>
         <button class="eval-btn" id="b-i-${i}" onclick="setEval(${i},'balance','improve')">△</button>
       </div>
     </div>`).join('');
@@ -508,10 +508,10 @@ function showAnswerReview() {
     <div style="position:relative">
       <button class="back-btn" onclick="showQuiz()">←</button>
       <div class="header"><h1>答え合わせ</h1>
-      <div class="sub">GIFを見てかくにん！△のところをタップしてね</div></div>
+      <div class="sub">◎か△をえらんでね（ぜんぶえらぶと進めるよ）</div></div>
     </div>
     <div class="answer-grid">${cards}</div>
-    <button class="btn btn-green" onclick="showResults()">けっかを見る</button>
+    <button class="btn btn-green" id="btn-results" onclick="showResults()" disabled>けっかを見る</button>
   `);
 }
 
@@ -526,8 +526,17 @@ window.setEval = function(idx, aspect, value) {
   // カード色更新
   const card = document.getElementById(`ac-${idx}`);
   const e = state.evals[idx];
-  const allGood = e.shape === 'good' && e.order === 'good' && e.balance === 'good';
-  card.className = `a-card ${allGood ? 'all-good' : 'has-improve'}`;
+  const allSelected = e.shape !== null && e.order !== null && e.balance !== null;
+  if (allSelected) {
+    const allGood = e.shape === 'good' && e.order === 'good' && e.balance === 'good';
+    card.className = `a-card ${allGood ? 'all-good' : 'has-improve'}`;
+  }
+  // 全問選択済みチェック → ボタン有効化
+  const allDone = state.questions.every((_, i) => {
+    const ev = state.evals[i];
+    return ev.shape !== null && ev.order !== null && ev.balance !== null;
+  });
+  document.getElementById('btn-results').disabled = !allDone;
 };
 
 // --- 結果画面 ---
